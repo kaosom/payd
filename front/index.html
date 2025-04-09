@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Usuarios</title>
+    <style>
+      body {
+        font-family: Arial;
+        padding: 20px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f4f4f4;
+      }
+      input[type="text"],
+      input[type="email"] {
+        width: 100%;
+        padding: 8px;
+      }
+      button {
+        padding: 6px 12px;
+        margin: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>CRUD</h1>
+
+    <form id="userForm">
+      <input type="hidden" id="id" />
+      <label for="nombre">Nombre:</label><br />
+      <input type="text" id="nombre" required /><br /><br />
+
+      <label for="email">Email:</label><br />
+      <input type="email" id="email" required /><br /><br />
+
+      <button type="submit" id="submitBtn">Crear Usuario</button>
+      <button type="button" id="cancelBtn" style="display: none">
+        Cancelar
+      </button>
+    </form>
+
+    <h2>Lista de Usuarios</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+    <script>
+      const apiUrl = "http://localhost:3000/usuarios";
+
+      async function cargarUsuarios() {
+        const res = await fetch(apiUrl);
+        const usuarios = await res.json();
+        const tbody = document.getElementById("userTableBody");
+        tbody.innerHTML = "";
+
+        usuarios.forEach((usuario) => {
+          const fila = document.createElement("tr");
+          fila.innerHTML = `
+          <td>${usuario.id}</td>
+          <td>${usuario.nombre}</td>
+          <td>${usuario.email}</td>
+          <td>
+            <button onclick="editarUsuario(${usuario.id}, '${usuario.nombre}', '${usuario.email}')">Editar</button>
+            <button onclick="eliminarUsuario(${usuario.id})">Eliminar</button>
+          </td>
+        `;
+          tbody.appendChild(fila);
+        });
+      }
+
+      async function eliminarUsuario(id) {
+        if (confirm("Seguro?")) {
+          await fetch(`${apiUrl}/${id}`, { method: "DELETE" });
+          cargarUsuarios();
+        }
+      }
+
+      function editarUsuario(id, nombre, email) {
+        document.getElementById("id").value = id;
+        document.getElementById("nombre").value = nombre;
+        document.getElementById("email").value = email;
+        document.getElementById("submitBtn").textContent = "Actualizar Usuario";
+        document.getElementById("cancelBtn").style.display = "inline";
+      }
+
+      document.getElementById("cancelBtn").addEventListener("click", () => {
+        document.getElementById("userForm").reset();
+        document.getElementById("id").value = "";
+        document.getElementById("submitBtn").textContent = "Crear Usuario";
+        document.getElementById("cancelBtn").style.display = "none";
+      });
+
+      document
+        .getElementById("userForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const id = document.getElementById("id").value;
+          const nombre = document.getElementById("nombre").value;
+          const email = document.getElementById("email").value;
+
+          const datos = {
+            nombre,
+            email,
+          };
+
+          if (id) {
+            await fetch(`${apiUrl}/${id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(datos),
+            });
+          } else {
+            await fetch(apiUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(datos),
+            });
+          }
+
+          document.getElementById("userForm").reset();
+          document.getElementById("id").value = "";
+          document.getElementById("submitBtn").textContent = "Crear Usuario";
+          document.getElementById("cancelBtn").style.display = "none";
+          cargarUsuarios();
+        });
+
+      cargarUsuarios();
+    </script>
+  </body>
+</html>
